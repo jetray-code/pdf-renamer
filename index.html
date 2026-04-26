@@ -27,7 +27,7 @@
         .preview-glow { box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.2); }
     </style>
 </head>
-<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-medium">
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-medium text-sm">
     <div id="root"></div>
 
     <script type="text/babel">
@@ -73,14 +73,8 @@
                             <div>
                                 <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Word Separator</label>
                                 <div className="flex gap-4">
-                                    {[
-                                        { id: ' ', label: 'Space' },
-                                        { id: '_', label: 'Underscore' },
-                                        { id: '-', label: 'Hyphen' }
-                                    ].map(sep => (
-                                        <button key={sep.id} onClick={() => setConfig({ ...config, separator: sep.id })} className={`flex-1 py-3 rounded-2xl border text-sm font-bold transition-all ${config.separator === sep.id ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg' : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
-                                            {sep.label}
-                                        </button>
+                                    {[{ id: ' ', label: 'Space' }, { id: '_', label: 'Underscore' }, { id: '-', label: 'Hyphen' }].map(sep => (
+                                        <button key={sep.id} onClick={() => setConfig({ ...config, separator: sep.id })} className={`flex-1 py-3 rounded-2xl border text-sm font-bold transition-all ${config.separator === sep.id ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg' : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>{sep.label}</button>
                                     ))}
                                 </div>
                             </div>
@@ -99,7 +93,9 @@
             if (!isOpen || !path) return null;
             return (
                 <div onClick={onClose} className="fixed inset-0 z-[110] modal-overlay flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-                    <iframe src={path} className="max-w-full max-h-full w-full h-full rounded-lg shadow-2xl border-2 md:border-4 border-white dark:border-slate-800 animate-in zoom-in-95 duration-300" />
+                    <div className="bg-white p-2 rounded-2xl w-full h-full max-w-5xl overflow-hidden relative shadow-2xl">
+                        <iframe src={path} className="w-full h-full rounded-xl border-0" />
+                    </div>
                 </div>
             );
         };
@@ -114,21 +110,21 @@
             return (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 modal-overlay animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh] border border-slate-100 dark:border-slate-800 overflow-hidden">
-                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-center md:text-left">
                             <h2 className="text-2xl font-black">Confirm Rename</h2>
                             <p className="text-slate-500 text-sm font-medium mt-1">Ready to process {files.length} files.</p>
                         </div>
-                        <div className="flex-1 overflow-y-auto p-8 space-y-4">
+                        <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4">
                             {files.map((f, i) => (
-                                <div key={i} className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800">
-                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">{f.name}</p>
-                                    <p className="text-sm font-extrabold text-indigo-600">{f.detected_title}.pdf</p>
+                                <div key={i} className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800 flex flex-col md:flex-row md:justify-between items-start md:items-center gap-2">
+                                    <p className="text-[10px] font-black text-slate-400 truncate max-w-[200px] uppercase tracking-widest">{f.name}</p>
+                                    <p className="text-sm font-black text-indigo-600 truncate">{f.detected_title}.pdf</p>
                                 </div>
                             ))}
                         </div>
                         <div className="p-8 border-t border-slate-100 dark:border-slate-800 flex gap-4">
                             <button onClick={onCancel} className="flex-1 py-4 rounded-2xl text-sm font-bold text-slate-400 hover:bg-slate-100 transition-all">Cancel</button>
-                            <button onClick={onConfirm} className="flex-2 px-12 py-4 rounded-2xl text-sm font-black bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl transition-all">Execute Bulk Rename</button>
+                            <button onClick={onConfirm} className="flex-2 px-8 md:px-12 py-4 rounded-2xl text-sm font-black bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl transition-all">Confirm All</button>
                         </div>
                     </div>
                 </div>
@@ -137,28 +133,7 @@
 
         const App = () => {
             const [isSupported] = useState('showDirectoryPicker' in window);
-            const [dirHandle, setDirHandle] = useState(null);
-            
-            if (!isSupported) {
-                return (
-                    <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 text-center">
-                        <div className="max-w-md bg-white dark:bg-slate-900 p-10 rounded-[3rem] shadow-2xl border border-red-100 dark:border-red-900/30">
-                            <div className="bg-red-50 dark:bg-red-900/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500">
-                                <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
-                            </div>
-                            <h2 className="text-2xl font-black mb-4 tracking-tight">Browser Not Supported</h2>
-                            <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8">
-                                Firefox and Safari do not allow direct file renaming for security reasons. To use this tool, please switch to <strong>Google Chrome</strong> or <strong>Microsoft Edge</strong>.
-                            </p>
-                            <div className="flex flex-col gap-3">
-                                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-2xl text-[10px] font-bold uppercase tracking-widest text-slate-400 border border-slate-100 dark:border-slate-700">
-                                    Required API: window.showDirectoryPicker
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                );
-            }
+            if (!isSupported) return <div className="h-screen flex items-center justify-center p-10 text-center font-bold">Unsupported Browser. Use Chrome/Edge.</div>;
 
             const [files, setFiles] = useState([]);
             const [selectedPaths, setSelectedPaths] = useState(new Set());
@@ -166,41 +141,23 @@
             const [previewUrl, setPreviewPath] = useState(null);
             const [isSidebarOpen, setIsSidebarOpen] = useState(false);
             const [activeModal, setActiveModal] = useState(null);
-            const [deferredPrompt, setDeferredPrompt] = useState(null);
-            const [recentPaths, setRecentPaths] = useState([]);
-            
+            const [recentFolders, setRecentFolders] = useState([]); // Stores {name, handle}
             const [config, setConfig] = useState(() => {
                 const saved = localStorage.getItem('appConfig');
                 return saved ? JSON.parse(saved) : { theme: 'system', naming: 'title', separator: ' ' };
             });
 
+            const selectedFiles = useMemo(() => files.filter(f => selectedPaths.has(f.name) && f.status !== 'Done'), [files, selectedPaths]);
+
             useEffect(() => {
-                if ('serviceWorker' in navigator) {
-                    window.addEventListener('load', () => {
-                        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed', err));
-                    });
+                const savedNames = localStorage.getItem('recentPDFPaths');
+                if (savedNames) {
+                    const names = JSON.parse(savedNames);
+                    setRecentFolders(names.map(n => ({ name: n, handle: null })));
                 }
-                window.addEventListener('beforeinstallprompt', (e) => {
-                    e.preventDefault();
-                    setDeferredPrompt(e);
-                });
-
-                const savedPaths = localStorage.getItem('recentPDFPaths');
-                if (savedPaths) setRecentPaths(JSON.parse(savedPaths));
                 applyTheme(config.theme);
-                localStorage.setItem('appConfig', JSON.stringify(config));
-                
-                if (files.length > 0) {
-                    setFiles(prev => prev.map(f => ({...f, detected_title: formatTitle(f.detected_title)})));
-                }
+                if (files.length > 0) setFiles(prev => prev.map(f => ({...f, detected_title: formatTitle(f.detected_title)})));
             }, [config]);
-
-            const installApp = async () => {
-                if (!deferredPrompt) return;
-                deferredPrompt.prompt();
-                const { outcome } = await deferredPrompt.userChoice;
-                if (outcome === 'accepted') setDeferredPrompt(null);
-            };
 
             const applyTheme = (mode) => {
                 const root = window.document.documentElement;
@@ -212,42 +169,38 @@
             const formatTitle = (txt) => {
                 if (!txt) return txt;
                 let clean = txt.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
-                let words = clean.split(' ');
                 if (config.naming === 'caps') clean = clean.toUpperCase();
                 else if (config.naming === 'small') clean = clean.toLowerCase();
-                else clean = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                else clean = clean.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
                 return clean.replace(/\s/g, config.separator);
             };
 
-            const selectFolder = async () => {
-                try {
-                    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
-                    setDirHandle(handle);
-                    setFiles([]);
-                    setSelectedPaths(new Set());
-                    setStatus('Scanning PDFs...');
-                    
-                    const list = [];
-                    for await (const entry of handle.values()) {
-                        if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.pdf')) {
-                            const file = await entry.getFile();
-                            const candidates = await extractTitles(file);
-                            list.push({
-                                handle: entry,
-                                name: entry.name,
-                                candidates: candidates,
-                                detected_title: formatTitle(candidates[0]?.text || entry.name.replace('.pdf', '')),
-                                status: 'Pending'
-                            });
-                        }
+            const scanHandle = async (handle) => {
+                setFiles([]); setSelectedPaths(new Set()); setStatus('Scanning...');
+                const list = [];
+                for await (const entry of handle.values()) {
+                    if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.pdf')) {
+                        const file = await entry.getFile();
+                        const candidates = await extractTitles(file);
+                        list.push({ handle: entry, name: entry.name, candidates, detected_title: formatTitle(candidates[0]?.text || entry.name.replace('.pdf', '')), status: 'Pending' });
                     }
-                    setFiles(list);
-                    setStatus(`Loaded ${list.length} PDFs`);
-                    setIsSidebarOpen(false);
-                } catch (err) {
-                    console.error(err);
-                    setStatus('Access denied');
                 }
+                setFiles(list); setStatus(`Loaded ${list.length} PDFs`); setIsSidebarOpen(false);
+                // Update history
+                const updated = [handle.name, ...recentFolders.map(f => f.name).filter(n => n !== handle.name)].slice(0, 5);
+                localStorage.setItem('recentPDFPaths', JSON.stringify(updated));
+                setRecentFolders(prev => {
+                    const filtered = prev.filter(f => f.name !== handle.name);
+                    return [{ name: handle.name, handle }, ...filtered].slice(0, 5);
+                });
+            };
+
+            const selectFolder = async (existingHandle = null) => {
+                try {
+                    let handle = existingHandle;
+                    if (!handle) handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    await scanHandle(handle);
+                } catch (err) { setStatus('Picker Cancelled'); }
             };
 
             const extractTitles = async (file) => {
@@ -256,56 +209,32 @@
                     const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
                     const page = await pdf.getPage(1);
                     const textContent = await page.getTextContent();
-                    const viewport = page.getViewport({ scale: 1.0 });
-                    const { height, width } = viewport;
+                    const { height, width } = page.getViewport({ scale: 1.0 });
                     const isLandscape = width > height;
-
-                    const items = textContent.items.map(item => ({
-                        text: item.str.trim(),
-                        size: item.transform[0],
-                        y: item.transform[5],
-                        x: item.transform[4]
-                    })).filter(i => i.text.length > 3);
-
-                    if (items.length === 0) return [{ text: "Scanned Content", score: 10 }];
-
+                    const items = textContent.items.map(i => ({ text: i.str.trim(), size: i.transform[0], y: i.transform[5] })).filter(i => i.text.length > 3);
+                    if (items.length === 0) return [{ text: "Scanned Document", score: 10 }];
                     const maxFontSize = Math.max(...items.map(i => i.size));
                     let grouped = [];
-                    const sortedItems = items.sort((a, b) => b.size - a.size);
-                    const topSizes = [...new Set(sortedItems.map(i => Math.round(i.size)))].slice(0, 3);
-
+                    const topSizes = [...new Set(items.map(i => Math.round(i.size)))].sort((a,b) => b-a).slice(0, 3);
                     topSizes.forEach(size => {
-                        const sizeMatches = items.filter(i => Math.round(i.size) === size);
-                        sizeMatches.sort((a, b) => b.y - a.y); 
-
+                        const sizeMatches = items.filter(i => Math.round(i.size) === size).sort((a, b) => b.y - a.y);
                         if (sizeMatches.length > 0) {
-                            let currentText = sizeMatches[0].text;
-                            let lastY = sizeMatches[0].y;
+                            let txt = sizeMatches[0].text, lastY = sizeMatches[0].y;
                             for (let i = 1; i < sizeMatches.length; i++) {
-                                if (Math.abs(sizeMatches[i].y - lastY) < size * 2.5) {
-                                    currentText += " " + sizeMatches[i].text;
-                                    lastY = sizeMatches[i].y;
-                                } else {
-                                    grouped.push({ text: currentText, score: calcScore(currentText, size, maxFontSize, isLandscape, lastY, height) });
-                                    currentText = sizeMatches[i].text;
-                                    lastY = sizeMatches[i].y;
-                                }
+                                if (Math.abs(sizeMatches[i].y - lastY) < size * 2.5) { txt += " " + sizeMatches[i].text; lastY = sizeMatches[i].y; }
+                                else { grouped.push({ text: txt, score: calcScore(txt, size, maxFontSize, isLandscape, lastY, height) }); txt = sizeMatches[i].text; lastY = sizeMatches[i].y; }
                             }
-                            grouped.push({ text: currentText, score: calcScore(currentText, size, maxFontSize, isLandscape, lastY, height) });
+                            grouped.push({ text: txt, score: calcScore(txt, size, maxFontSize, isLandscape, lastY, height) });
                         }
                     });
-
                     return grouped.sort((a, b) => b.score - a.score).slice(0, 3);
                 } catch (e) { return []; }
             };
 
             const calcScore = (text, size, max, landscape, y, h) => {
-                let s = (size / max) * 40;
-                if (landscape) s += 20;
-                const posRatio = y / h; 
-                if (posRatio > 0.4 && posRatio < 0.9) s += 20;
-                const words = text.split(' ').length;
-                if (words >= 4 && words <= 15) s += 20;
+                let s = (size / max) * 40; if (landscape) s += 20;
+                const posRatio = y / h; if (posRatio > 0.4 && posRatio < 0.9) s += 20;
+                const words = text.split(' ').length; if (words >= 4 && words <= 15) s += 20;
                 if (text.toLowerCase().includes('pda')) s -= 30;
                 return Math.max(0, Math.min(100, Math.round(s)));
             };
@@ -318,28 +247,23 @@
 
             const updatePreview = async (f) => {
                 const file = await f.handle.getFile();
-                const url = URL.createObjectURL(file);
-                setPreviewPath(url);
+                setPreviewPath(URL.createObjectURL(file));
             };
 
             const runRename = async () => {
-                setActiveModal(null);
-                setStatus('Renaming...');
-                const toProcess = files.filter(f => selectedPaths.has(f.name) && f.status !== 'Done');
-                for (let f of toProcess) {
+                setActiveModal(null); setStatus('Renaming...');
+                for (let f of files.filter(f => selectedPaths.has(f.name) && f.status !== 'Done')) {
                     try {
                         const newName = `${f.detected_title}.pdf`;
-                        if (typeof f.handle.move === 'function') {
-                            await f.handle.move(newName);
-                        } else {
-                            const newFileHandle = await dirHandle.getFileHandle(newName, { create: true });
-                            const writable = await newFileHandle.createWritable();
-                            await writable.write(await f.handle.getFile());
-                            await writable.close();
-                            await dirHandle.removeEntry(f.name);
+                        if (typeof f.handle.move === 'function') await f.handle.move(newName);
+                        else {
+                            const newHandle = await f.handle.parent.getFileHandle(newName, { create: true });
+                            const writable = await newHandle.createWritable();
+                            await writable.write(await f.handle.getFile()); await writable.close();
+                            await f.handle.parent.removeEntry(f.name);
                         }
                         f.status = 'Done'; f.name = newName;
-                    } catch (e) { console.error(e); f.status = 'Error'; }
+                    } catch (e) { f.status = 'Error'; }
                 }
                 setFiles([...files]); setSelectedPaths(new Set()); setStatus('Batch complete');
             };
@@ -348,43 +272,38 @@
                 <div className="h-screen flex flex-col overflow-hidden transition-colors duration-300">
                     <header className="glass border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 px-6 md:px-10 py-5 flex justify-between items-center z-30 shadow-sm">
                         <div className="flex items-center gap-4">
-                            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
-                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
-                            </button>
-                            <div className="hidden md:block bg-indigo-600 p-2.5 rounded-2xl text-white shadow-xl shadow-indigo-100 dark:shadow-none transition-all active:scale-95">
-                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
-                            </div>
-                            <div>
-                                <h1 className="text-xl font-black tracking-tighter leading-none">Smart Renamer</h1>
-                                <p className="hidden md:block text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1.5">Standalone UI</p>
-                            </div>
+                            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
+                            <div className="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-xl shadow-indigo-100 dark:shadow-none"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                            <h1 className="text-xl font-black tracking-tighter hidden md:block">Smart Renamer</h1>
                         </div>
-                        <div className="flex gap-4 md:gap-8 items-center">
-                            {deferredPrompt && (
-                                <button onClick={installApp} className="hidden md:flex bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg items-center gap-2">
-                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                                    Install
-                                </button>
-                            )}
-                            <button onClick={() => setActiveModal('settings')} className="p-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
-                            <button onClick={() => setActiveModal('confirm')} disabled={selectedPaths.size === 0} className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-300 text-white px-6 md:px-10 py-3 rounded-2xl text-xs md:text-sm font-black transition-all shadow-xl active:scale-95 uppercase tracking-widest">
-                                Rename ({selectedPaths.size})
-                            </button>
+                        <div className="flex gap-4 items-center">
+                            <button onClick={() => setActiveModal('settings')} className="p-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all group"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-hover:rotate-90 transition-transform"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                            <button onClick={() => setActiveModal('confirm')} disabled={selectedFiles.length === 0} className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-300 text-white px-6 md:px-10 py-3 rounded-2xl text-xs md:text-sm font-black transition-all shadow-xl active:scale-95 uppercase tracking-widest">Rename ({selectedFiles.length})</button>
                         </div>
                     </header>
 
-                    <main className="flex-1 flex overflow-hidden relative bg-slate-50/50">
+                    <main className="flex-1 flex overflow-hidden relative">
                         {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />}
                         <aside className={`fixed md:relative inset-y-0 left-0 w-72 md:w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform duration-300 flex flex-col h-full`}>
                             <div className="p-8 space-y-8 flex-1 overflow-y-auto">
                                 <div>
-                                    <label className="block text-[10px] font-black text-slate-400 mb-4 uppercase tracking-[0.2em]">Source Directory</label>
-                                    <button onClick={selectFolder} className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100">Open Folder</button>
+                                    <label className="block text-[10px] font-black text-slate-400 mb-4 uppercase tracking-[0.2em]">Source Folder</label>
+                                    <button onClick={() => selectFolder()} className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg active:scale-95">Open Folder</button>
                                 </div>
+                                {recentFolders.length > 0 && (
+                                    <div>
+                                        <label className="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-4">Recently Processed</label>
+                                        <div className="space-y-2">
+                                            {recentFolders.map((f, i) => (
+                                                <button key={i} onClick={() => selectFolder(f.handle)} className="w-full text-left text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 truncate bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 transition-all active:scale-95">{f.name}</button>
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                                 {previewUrl && (
-                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900">
                                         <h3 className="text-[10px] font-black text-slate-400 mb-4 uppercase tracking-widest">Live Preview</h3>
-                                        <div onClick={() => setActiveModal('fullscreen')} className="relative border border-slate-100 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl bg-white dark:bg-slate-800 p-1.5 cursor-zoom-in hover:scale-[1.02] transition-transform">
+                                        <div onClick={() => setActiveModal('fullscreen')} className="relative border border-slate-100 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl bg-white dark:bg-slate-800 p-1.5 cursor-zoom-in transition-transform hover:scale-[1.02] preview-glow">
                                             <iframe src={previewUrl} className="w-full aspect-[3/4] rounded-[2.2rem] border-0 pointer-events-none" />
                                         </div>
                                     </div>
@@ -392,64 +311,72 @@
                             </div>
                         </aside>
 
-                        <div className="flex-1 overflow-y-auto p-4 md:p-10 h-full">
-                            <div className="hidden md:block bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl">
-                                <table className="w-full text-left border-collapse">
-                                    <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
-                                        <tr>
-                                            <th className="px-8 py-6 w-12"><input type="checkbox" className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600" onChange={() => setSelectedPaths(selectedPaths.size === files.length ? new Set() : new Set(files.map(f => f.name)))} checked={files.length > 0 && selectedPaths.size === files.length} /></th>
-                                            <th className="px-4 py-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">Metadata</th>
-                                            <th className="px-8 py-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">Calculated Title</th>
-                                            <th className="px-8 py-6 w-20 text-center">View</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                                        {files.map((file, idx) => {
-                                            const isDone = file.status === 'Done';
-                                            const isSelected = selectedPaths.has(file.name);
-                                            const bestScore = file.candidates[0]?.score || 0;
-                                            return (
-                                            <tr key={idx} className={`${isSelected ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : 'hover:bg-slate-50/20 dark:hover:bg-slate-800/20'} transition-all`}>
-                                                <td className="px-8 py-6 align-top"><input type="checkbox" disabled={isDone} checked={isSelected} onChange={() => toggleSelection(file.name)} className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600" /></td>
-                                                <td className="px-4 py-6 align-top"><p className={`text-[11px] font-bold truncate max-w-[180px] ${isDone ? 'text-slate-300' : 'text-slate-400'}`}>{file.name}</p></td>
-                                                <td className="px-8 py-6">
-                                                    <div className="flex flex-col gap-4">
-                                                        <div className="flex items-center gap-4">
-                                                            <input className={`flex-1 bg-transparent border-b-2 border-transparent focus:border-indigo-400 outline-none font-extrabold text-sm py-1 transition-all ${isDone ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`} value={file.detected_title} onChange={(e) => { const n = [...files]; n[idx].detected_title = e.target.value; setFiles(n); }} disabled={isDone} />
-                                                            {!isDone && <span className={`px-2.5 py-1 rounded-lg border text-[9px] font-black uppercase ${bestScore >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{bestScore}%</span>}
-                                                        </div>
-                                                        {!isDone && file.candidates.length > 1 && (
-                                                            <div className="flex flex-wrap gap-2">
-                                                                {file.candidates.slice(1).map((c, ci) => <button key={ci} onClick={() => { const n = [...files]; n[idx].detected_title = formatTitle(c.text); setFiles(n); }} className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700">{c.text} ({c.score}%)</button>)}
+                        <div className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50/50 dark:bg-slate-950/50">
+                            {files.length === 0 ? (
+                                <div className="py-20 md:py-40 text-center bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-inner flex flex-col items-center justify-center p-8">
+                                    <div className="bg-indigo-50 dark:bg-slate-800 w-24 h-24 rounded-full flex items-center justify-center mb-8 text-indigo-600 font-black text-xl">PDF</div>
+                                    <h3 className="text-xl font-black mb-2 tracking-tight">Ready to Rename?</h3>
+                                    <p className="text-sm font-bold text-slate-300 uppercase tracking-widest mb-8">Select a folder to begin</p>
+                                    <button onClick={() => selectFolder()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-4 rounded-3xl text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 active:scale-95 transition-all">Select PDF Folder</button>
+                                </div>
+                            ) : (
+                                <>
+                                    <div className="hidden md:block bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 overflow-hidden shadow-xl">
+                                        <table className="w-full text-left border-collapse">
+                                            <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
+                                                <tr>
+                                                    <th className="px-8 py-6 w-12"><input type="checkbox" className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600 focus:ring-indigo-500" onChange={() => setSelectedPaths(selectedFiles.length === files.length ? new Set() : new Set(files.map(f => f.name)))} checked={files.length > 0 && selectedFiles.length === files.length} /></th>
+                                                    <th className="px-4 py-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">Metadata</th>
+                                                    <th className="px-8 py-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">Target Title</th>
+                                                    <th className="px-8 py-6 w-20 text-center">View</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                                                {files.map((file, idx) => {
+                                                    const isDone = file.status === 'Done', isSelected = selectedPaths.has(file.name), bestScore = file.candidates[0]?.score || 0;
+                                                    return (
+                                                    <tr key={idx} className={`${isSelected ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : 'hover:bg-slate-50/20 dark:hover:bg-slate-800/20'} transition-all`}>
+                                                        <td className="px-8 py-6 align-top"><input type="checkbox" disabled={isDone} checked={isSelected} onChange={() => toggleSelection(file.name)} className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600" /></td>
+                                                        <td className="px-4 py-6 align-top font-bold text-slate-400 truncate max-w-[180px]">{file.name}</td>
+                                                        <td className="px-8 py-6">
+                                                            <div className="flex flex-col gap-4">
+                                                                <div className="flex items-center gap-4">
+                                                                    <input className={`flex-1 bg-transparent border-b-2 border-transparent focus:border-indigo-400 outline-none font-black text-sm py-1 transition-all ${isDone ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`} value={file.detected_title} onChange={(e) => { const n = [...files]; n[idx].detected_title = e.target.value; setFiles(n); }} disabled={isDone} />
+                                                                    {!isDone && <span className={`px-2.5 py-1 rounded-lg border text-[9px] font-black uppercase ${bestScore >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{bestScore}%</span>}
+                                                                </div>
+                                                                {!isDone && file.candidates.length > 1 && (
+                                                                    <div className="flex flex-wrap gap-2">
+                                                                        {file.candidates.slice(1).map((c, ci) => <button key={ci} onClick={() => { const n = [...files]; n[idx].detected_title = formatTitle(c.text); setFiles(n); }} className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700 shadow-sm">{c.text} ({c.score}%)</button>)}
+                                                                    </div>
+                                                                )}
                                                             </div>
-                                                        )}
-                                                    </div>
-                                                </td>
-                                                <td className="px-8 py-6 align-top text-center"><button onClick={() => updatePreview(file)} className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-white rounded-xl active:scale-90"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
-                                            </tr>
-                                            );
-                                        })}
-                                    </tbody>
-                                </table>
-                            </div>
-                            {/* Mobile View */}
-                            <div className="md:hidden space-y-4">
-                                {files.map((file, idx) => (
-                                    <div key={idx} className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
-                                        <div className="flex justify-between items-start mb-4">
-                                            <input type="checkbox" disabled={file.status === 'Done'} checked={selectedPaths.has(file.name)} onChange={() => toggleSelection(file.name)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600" />
-                                            <button onClick={() => { updatePreview(file); setActiveModal('fullscreen'); }} className="p-2 text-slate-300 hover:text-indigo-600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
-                                        </div>
-                                        <p className="text-[10px] font-bold text-slate-400 truncate mb-2">{file.name}</p>
-                                        <input className="w-full bg-transparent border-b-2 border-slate-50 dark:border-slate-800 focus:border-indigo-400 outline-none font-extrabold text-sm py-2 mb-4" value={file.detected_title} onChange={(e) => { const n = [...files]; n[idx].detected_title = e.target.value; setFiles(n); }} disabled={file.status === 'Done'} />
+                                                        </td>
+                                                        <td className="px-8 py-6 align-top text-center"><button onClick={() => updatePreview(file)} className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl active:scale-90 transition-all"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+                                                    </tr>
+                                                    );
+                                                })}
+                                            </tbody>
+                                        </table>
                                     </div>
-                                ))}
-                            </div>
+                                    <div className="md:hidden space-y-4">
+                                        {files.map((file, idx) => (
+                                            <div key={idx} className={`p-5 rounded-3xl border transition-all ${selectedPaths.has(file.name) ? 'bg-indigo-50 border-indigo-200 dark:bg-indigo-900/20' : 'bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800'}`}>
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <input type="checkbox" disabled={file.status === 'Done'} checked={selectedPaths.has(file.name)} onChange={() => toggleSelection(file.name)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600" />
+                                                    <button onClick={() => { updatePreview(file); setActiveModal('fullscreen'); }} className="p-2 text-slate-300 hover:text-indigo-600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                                                </div>
+                                                <p className="text-[10px] font-bold text-slate-400 truncate mb-2">{file.name}</p>
+                                                <input className="w-full bg-transparent border-b-2 border-slate-100 dark:border-slate-800 outline-none font-black text-sm py-2 mb-4" value={file.detected_title} onChange={(e) => { const n = [...files]; n[idx].detected_title = e.target.value; setFiles(n); }} disabled={file.status === 'Done'} />
+                                            </div>
+                                        ))}
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </main>
 
                     <SettingsModal isOpen={activeModal === 'settings'} onClose={() => setActiveModal(null)} config={config} setConfig={setConfig} />
-                    <ConfirmModal isOpen={activeModal === 'confirm'} files={files.filter(f => selectedPaths.has(f.name) && f.status !== 'Done')} onConfirm={runRename} onCancel={() => setActiveModal(null)} />
+                    <ConfirmModal isOpen={activeModal === 'confirm'} files={selectedFiles} onConfirm={runRename} onCancel={() => setActiveModal(null)} />
                     <FullscreenPreview isOpen={activeModal === 'fullscreen'} path={previewUrl} onClose={() => setActiveModal(null)} />
                 </div>
             );
