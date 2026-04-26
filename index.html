@@ -12,7 +12,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <script src="https://unpkg.com/tesseract.js@5.0.3/dist/tesseract.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <script>
         tailwind.config = { darkMode: 'class', theme: { extend: { colors: { indigo: { 600: '#4f46e5', 700: '#4338ca' }, slate: { 950: '#0f172a' } } } } }
     </script>
@@ -20,11 +20,11 @@
         body { font-family: 'Inter', sans-serif; overflow: hidden; }
         @media (max-width: 768px) { body { overflow: auto; } }
         .glass { backdrop-filter: blur(12px); }
-        .modal-overlay { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); }
+        .modal-overlay { background: rgba(0, 0, 0, 0.75); backdrop-filter: blur(8px); }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
         .dark ::-webkit-scrollbar-thumb { background: #334155; }
-        .preview-glow { box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.2); }
+        .preview-glow { box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.3); }
     </style>
 </head>
 <body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-medium text-sm">
@@ -40,8 +40,10 @@
                 <div className="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4 animate-in fade-in duration-200">
                     <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200">
                         <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center">
-                            <h2 className="text-xl font-black">Preferences</h2>
-                            <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                            <h2 className="text-xl font-black tracking-tight">Preferences</h2>
+                            <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                            </button>
                         </div>
                         <div className="p-8 space-y-8">
                             <div>
@@ -92,15 +94,18 @@
             }, [isOpen]);
             if (!isOpen || !path) return null;
             return (
-                <div onClick={onClose} className="fixed inset-0 z-[110] modal-overlay flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
-                    <div className="bg-white p-2 rounded-2xl w-full h-full max-w-5xl overflow-hidden relative shadow-2xl">
-                        <iframe src={path} className="w-full h-full rounded-xl border-0" />
+                <div onClick={onClose} className="fixed inset-0 z-[110] modal-overlay flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-300">
+                    <div className="bg-white p-2 rounded-3xl w-full h-full max-w-6xl overflow-hidden relative shadow-2xl ring-4 ring-white/20">
+                        <iframe src={path} className="w-full h-full rounded-2xl border-0" />
+                        <button className="absolute top-6 right-6 bg-slate-900/40 hover:bg-slate-900 p-3 rounded-full text-white backdrop-blur-md transition-all shadow-xl">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                        </button>
                     </div>
                 </div>
             );
         };
 
-        const ConfirmModal = ({ isOpen, files, onConfirm, onCancel }) => {
+        const ConfirmModal = ({ isOpen, files, saveLog, setSaveLog, onConfirm, onCancel }) => {
             useEffect(() => {
                 const handleEsc = (e) => { if (e.key === 'Escape') onCancel(); };
                 if (isOpen) window.addEventListener('keydown', handleEsc);
@@ -109,10 +114,10 @@
             if (!isOpen) return null;
             return (
                 <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 modal-overlay animate-in fade-in duration-200">
-                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh] border border-slate-100 dark:border-slate-800 overflow-hidden">
+                    <div className="bg-white dark:bg-slate-900 rounded-[3rem] shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh] border border-slate-100 dark:border-slate-800 overflow-hidden">
                         <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 text-center md:text-left">
-                            <h2 className="text-2xl font-black">Confirm Rename</h2>
-                            <p className="text-slate-500 text-sm font-medium mt-1">Ready to process {files.length} files.</p>
+                            <h2 className="text-2xl font-black tracking-tight">Confirm Changes</h2>
+                            <p className="text-slate-500 text-sm font-medium mt-1">Reviewing {files.length} planned renames.</p>
                         </div>
                         <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4">
                             {files.map((f, i) => (
@@ -122,9 +127,18 @@
                                 </div>
                             ))}
                         </div>
-                        <div className="p-8 border-t border-slate-100 dark:border-slate-800 flex gap-4">
-                            <button onClick={onCancel} className="flex-1 py-4 rounded-2xl text-sm font-bold text-slate-400 hover:bg-slate-100 transition-all">Cancel</button>
-                            <button onClick={onConfirm} className="flex-2 px-8 md:px-12 py-4 rounded-2xl text-sm font-black bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl transition-all">Confirm All</button>
+                        <div className="p-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/30">
+                            <label className="flex items-center gap-4 cursor-pointer group mb-8 p-5 bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-700 shadow-sm transition-all hover:border-indigo-200">
+                                <input type="checkbox" checked={saveLog} onChange={e => setSaveLog(e.target.checked)} className="w-6 h-6 rounded-lg border-slate-300 text-indigo-600 focus:ring-indigo-500" />
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-black tracking-tight">Save Session Audit Log</span>
+                                    <span className="text-[10px] text-slate-400 font-bold uppercase tracking-tighter">Creates a .txt file in your folder with rename history</span>
+                                </div>
+                            </label>
+                            <div className="flex gap-4">
+                                <button onClick={onCancel} className="flex-1 py-4 rounded-2xl text-sm font-bold text-slate-400 hover:bg-slate-100 transition-all">Cancel</button>
+                                <button onClick={onConfirm} className="flex-2 px-8 md:px-12 py-4 rounded-2xl text-sm font-black bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-100 transition-all active:scale-95">Execute Batch Rename</button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -133,12 +147,11 @@
 
         const App = () => {
             const [isSupported] = useState('showDirectoryPicker' in window);
-            
             if (!isSupported) {
                 return (
                     <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950 p-6 text-center">
                         <div className="max-w-md bg-white dark:bg-slate-900 p-10 rounded-[3rem] shadow-2xl border border-red-100 dark:border-red-900/30">
-                            <div className="bg-red-50 dark:bg-red-900/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 text-2xl font-bold">!</div>
+                            <div className="bg-red-50 dark:bg-red-900/20 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6 text-red-500 text-2xl font-black">!</div>
                             <h2 className="text-2xl font-black mb-4 tracking-tight">Unsupported Browser</h2>
                             <p className="text-slate-500 dark:text-slate-400 text-sm leading-relaxed mb-8">Direct file renaming requires Chrome or Edge. Please switch browsers to use this tool.</p>
                         </div>
@@ -155,7 +168,7 @@
             const [activeModal, setActiveModal] = useState(null);
             const [deferredPrompt, setDeferredPrompt] = useState(null);
             const [recentFolders, setRecentFolders] = useState([]);
-            
+            const [saveLog, setSaveLog] = useState(true);
             const [config, setConfig] = useState(() => {
                 const saved = localStorage.getItem('appConfig');
                 return saved ? JSON.parse(saved) : { theme: 'system', naming: 'title', separator: ' ' };
@@ -196,6 +209,7 @@
             };
 
             const scanHandle = async (handle) => {
+                setDirHandle(handle);
                 setFiles([]); setSelectedPaths(new Set()); setStatus('Scanning...');
                 const list = [];
                 for await (const entry of handle.values()) {
@@ -218,7 +232,7 @@
                     let handle = existingHandle;
                     if (!handle) handle = await window.showDirectoryPicker({ mode: 'readwrite' });
                     await scanHandle(handle);
-                } catch (err) { setStatus('Picker Cancelled'); }
+                } catch (err) { setStatus('Ready'); }
             };
 
             const clean = (t) => t.replace(/[\/\:\*\?"<>\|]/g, '').replace(/\s+/g, ' ').trim();
@@ -231,14 +245,11 @@
                     const textContent = await page.getTextContent();
                     const { height, width } = page.getViewport({ scale: 1.0 });
                     const isLandscape = width > height;
-                    
                     const items = textContent.items.map(i => {
                         const fontSize = Math.sqrt(Math.pow(i.transform[0], 2) + Math.pow(i.transform[1], 2));
                         return { text: i.str.trim(), size: fontSize, y: i.transform[5] };
                     }).filter(i => i.text.length > 2);
-
                     if (items.length === 0) return [{ text: "Scanned Content", score: 10 }];
-
                     const maxFontSize = Math.max(...items.map(i => i.size)) || 1;
                     let grouped = [];
                     const sortedByDescSize = [...items].sort((a, b) => b.size - a.size);
@@ -248,19 +259,17 @@
                         if (!bucket) { bucket = { avgSize: item.size, items: [] }; sizeBuckets.push(bucket); }
                         bucket.items.push(item);
                     });
-
                     sizeBuckets.slice(0, 8).forEach(bucket => {
                         const sizeMatches = bucket.items.sort((a, b) => b.y - a.y);
                         if (sizeMatches.length > 0) {
                             let txt = sizeMatches[0].text, lastY = sizeMatches[0].y, bSize = bucket.avgSize;
                             for (let i = 1; i < sizeMatches.length; i++) {
-                                if (Math.abs(sizeMatches[i].y - lastY) < bSize * 3.5) { txt += " " + sizeMatches[i].text; lastY = sizeMatches[i].y; }
+                                if (Math.abs(sizeMatches[i].y - lastY) < bSize * 3.2) { txt += " " + sizeMatches[i].text; lastY = sizeMatches[i].y; }
                                 else { grouped.push({ text: clean(txt), score: calcScore(txt, bSize, maxFontSize, isLandscape, lastY, height) }); txt = sizeMatches[i].text; lastY = sizeMatches[i].y; }
                             }
                             grouped.push({ text: clean(txt), score: calcScore(txt, bSize, maxFontSize, isLandscape, lastY, height) });
                         }
                     });
-
                     const seen = {};
                     grouped.forEach(g => {
                         const low = g.text.toLowerCase();
@@ -296,9 +305,22 @@
 
             const runRename = async () => {
                 setActiveModal(null); setStatus('Renaming...');
-                for (let f of files.filter(f => selectedPaths.has(f.name) && f.status !== 'Done')) {
+                const now = new Date();
+                const localTime = now.toLocaleString();
+                let logContent = `RENAME LOG - ${localTime}\n`;
+                logContent += `==========================================\n\n`;
+                const toProcess = files.filter(f => selectedPaths.has(f.name) && f.status !== 'Done');
+                let actualChangesCount = 0;
+                
+                for (let f of toProcess) {
                     try {
                         const newName = `${f.detected_title}.pdf`;
+                        // Only log and rename if the name actually changed
+                        if (newName === f.name) {
+                            f.status = 'Done';
+                            continue;
+                        }
+
                         if (typeof f.handle.move === 'function') await f.handle.move(newName);
                         else {
                             const newHandle = await dirHandle.getFileHandle(newName, { create: true });
@@ -306,10 +328,30 @@
                             await writable.write(await f.handle.getFile()); await writable.close();
                             await dirHandle.removeEntry(f.name);
                         }
+                        
+                        logContent += `[OK] ${f.name} -> ${newName}\n`;
                         f.status = 'Done'; f.name = newName;
-                    } catch (e) { console.error(e); f.status = 'Error'; }
+                        actualChangesCount++;
+                    } catch (e) { 
+                        logContent += `[ERROR] ${f.name} -> ${f.detected_title}.pdf (${e.message})\n`;
+                        f.status = 'Error'; 
+                    }
                 }
-                setFiles([...files]); setSelectedPaths(new Set()); setStatus('Batch complete');
+
+                setFiles([...files]); setSelectedPaths(new Set());
+
+                if (saveLog && dirHandle && actualChangesCount > 0) {
+                    try {
+                        const ts = now.getFullYear() + '-' + (now.getMonth()+1).toString().padStart(2,'0') + '-' + now.getDate().toString().padStart(2,'0') + '_' + now.getHours().toString().padStart(2,'0') + '-' + now.getMinutes().toString().padStart(2,'0');
+                        const logName = `rename_log_${ts}.txt`;
+                        const logHandle = await dirHandle.getFileHandle(logName, { create: true });
+                        const writable = await logHandle.createWritable();
+                        await writable.write(logContent); await writable.close();
+                        setStatus(`Complete. ${actualChangesCount} files renamed. Log saved.`);
+                    } catch (e) { setStatus('Batch complete (Log failed)'); }
+                } else {
+                    setStatus(`Batch complete. ${actualChangesCount} files changed.`);
+                }
             };
 
             return (
@@ -317,26 +359,26 @@
                     <header className="glass border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 px-6 md:px-10 py-5 flex justify-between items-center z-30 shadow-sm">
                         <div className="flex items-center gap-4">
                             <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg></button>
-                            <div className="hidden md:block bg-indigo-600 p-2.5 rounded-2xl text-white shadow-xl shadow-indigo-100 dark:shadow-none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
+                            <div className="bg-indigo-600 p-2.5 rounded-2xl text-white shadow-xl shadow-indigo-100 dark:shadow-none"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
                             <h1 className="text-xl font-black tracking-tighter hidden md:block">Smart Renamer</h1>
                         </div>
                         <div className="flex gap-4 md:gap-8 items-center">
-                            <button onClick={() => setActiveModal('settings')} className="p-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all group"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-hover:rotate-90 transition-transform"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                            <button onClick={() => setActiveModal('settings')} className="p-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all group shadow-sm border border-slate-100 dark:border-slate-800"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" className="group-hover:rotate-90 transition-transform"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
                             <button onClick={() => setActiveModal('confirm')} disabled={selectedFiles.length === 0} className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 dark:disabled:bg-slate-800 disabled:text-slate-300 text-white px-8 py-3 rounded-2xl text-xs md:text-sm font-black transition-all shadow-xl active:scale-95 uppercase tracking-widest">Rename ({selectedFiles.length})</button>
                         </div>
                     </header>
 
                     <main className="flex-1 flex overflow-hidden relative">
                         {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />}
-                        <aside className={`fixed md:relative inset-y-0 left-0 w-72 md:w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform duration-300 flex flex-col h-full`}>
-                            <div className="p-8 space-y-8 flex-1 overflow-y-auto">
+                        <aside className={`fixed md:relative inset-y-0 left-0 w-72 md:w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform duration-300 flex flex-col h-full shadow-2xl md:shadow-none`}>
+                            <div className="p-8 space-y-8 flex-1 overflow-y-auto scroll-smooth">
                                 <div>
                                     <label className="block text-[10px] font-black text-slate-400 mb-4 uppercase tracking-[0.2em]">Source Folder</label>
                                     <button onClick={() => selectFolder()} className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100 dark:shadow-none">Open Folder</button>
                                 </div>
                                 {recentFolders.length > 0 && (
                                     <div>
-                                        <label className="block text-[9px] font-black text-slate-300 uppercase tracking-widest mb-4">Recently Processed</label>
+                                        <label className="block text-[9px] font-black text-slate-300 dark:text-slate-600 uppercase tracking-widest mb-4">Recently Processed</label>
                                         <div className="space-y-2">
                                             {recentFolders.map((f, i) => (
                                                 <button key={i} onClick={() => selectFolder(f.handle)} className="w-full text-left text-[11px] font-bold text-slate-500 dark:text-slate-400 hover:text-indigo-600 truncate bg-slate-50 dark:bg-slate-800 p-3 rounded-xl border border-slate-100 dark:border-slate-700 transition-all active:scale-95 group flex items-center gap-2">
@@ -348,7 +390,7 @@
                                     </div>
                                 )}
                                 {previewUrl && (
-                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900">
+                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800 sticky top-0 bg-white dark:bg-slate-900 z-10 py-4">
                                         <h3 className="text-[10px] font-black text-slate-400 mb-4 uppercase tracking-widest">Live Preview</h3>
                                         <div onClick={() => setActiveModal('fullscreen')} className="relative border border-slate-100 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl bg-white dark:bg-slate-800 p-1.5 cursor-zoom-in transition-transform hover:scale-[1.02] preview-glow">
                                             <iframe src={previewUrl} className="w-full aspect-[3/4] rounded-[2.2rem] border-0 pointer-events-none" />
@@ -360,20 +402,20 @@
 
                         <div className="flex-1 overflow-y-auto p-4 md:p-10 bg-slate-50/50 dark:bg-slate-950/50">
                             {files.length === 0 ? (
-                                <div className="py-20 md:py-40 text-center bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-100 dark:border-slate-800 shadow-inner flex flex-col items-center justify-center p-8">
-                                    <div className="bg-indigo-50 dark:bg-slate-800 w-24 h-24 rounded-full flex items-center justify-center mb-8 text-indigo-600 font-black text-xl tracking-tight">PDF</div>
+                                <div className="py-20 md:py-40 text-center bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-100 dark:border-slate-800 shadow-inner flex flex-col items-center justify-center p-8">
+                                    <div className="bg-indigo-50 dark:bg-slate-800 w-24 h-24 rounded-full flex items-center justify-center mb-8 text-indigo-600 font-black text-2xl tracking-tighter shadow-sm">PDF</div>
                                     <h3 className="text-xl font-black mb-2 tracking-tight">Ready to Rename?</h3>
-                                    <p className="text-sm font-bold text-slate-300 uppercase tracking-widest mb-8">Select a folder to begin</p>
-                                    <button onClick={() => selectFolder()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-10 py-4 rounded-3xl text-sm font-black uppercase tracking-[0.2em] shadow-xl shadow-indigo-100 active:scale-95 transition-all">Select PDF Folder</button>
+                                    <p className="text-sm font-bold text-slate-300 dark:text-slate-600 uppercase tracking-widest mb-10">Select a folder to begin bulk renaming</p>
+                                    <button onClick={() => selectFolder()} className="bg-indigo-600 hover:bg-indigo-700 text-white px-12 py-5 rounded-[2rem] text-sm font-black uppercase tracking-[0.2em] shadow-2xl shadow-indigo-200 dark:shadow-none transition-all active:scale-95">Select PDF Folder</button>
                                 </div>
                             ) : (
-                                <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl">
+                                <div className="bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-2xl transition-all duration-500">
                                     <table className="w-full text-left border-collapse">
                                         <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
                                             <tr>
-                                                <th className="px-8 py-6 w-12"><input type="checkbox" className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600 focus:ring-indigo-500" onChange={() => setSelectedPaths(selectedFiles.length === files.length ? new Set() : new Set(files.map(f => f.name)))} checked={files.length > 0 && selectedFiles.length === files.length} /></th>
+                                                <th className="px-8 py-6 w-12 text-center"><input type="checkbox" className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600 focus:ring-indigo-500" onChange={() => setSelectedPaths(selectedFiles.length === files.length ? new Set() : new Set(files.map(f => f.name)))} checked={files.length > 0 && selectedFiles.length === files.length} /></th>
                                                 <th className="px-4 py-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">Metadata</th>
-                                                <th className="px-8 py-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">Target Title</th>
+                                                <th className="px-8 py-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">Calculated Title</th>
                                                 <th className="px-8 py-6 w-20 text-center">View</th>
                                             </tr>
                                         </thead>
@@ -382,7 +424,7 @@
                                                 const isDone = file.status === 'Done', isSelected = selectedPaths.has(file.name), bestScore = file.candidates[0]?.score || 0;
                                                 return (
                                                 <tr key={idx} className={`${isSelected ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : 'hover:bg-slate-50/20 dark:hover:bg-slate-800/20'} transition-all`}>
-                                                    <td className="px-8 py-6 align-top"><input type="checkbox" disabled={isDone} checked={isSelected} onChange={() => toggleSelection(file.name)} className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600" /></td>
+                                                    <td className="px-8 py-6 align-top text-center"><input type="checkbox" disabled={isDone} checked={isSelected} onChange={() => toggleSelection(file.name)} className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600" /></td>
                                                     <td className="px-4 py-6 align-top font-bold text-slate-400 truncate max-w-[180px]">{file.name}</td>
                                                     <td className="px-8 py-6">
                                                         <div className="flex flex-col gap-4">
@@ -392,12 +434,12 @@
                                                             </div>
                                                             {!isDone && file.candidates.length > 1 && (
                                                                 <div className="flex flex-wrap gap-2">
-                                                                    {file.candidates.slice(1).map((c, ci) => <button key={ci} onClick={() => { const n = [...files]; n[idx].detected_title = formatTitle(c.text); setFiles(n); }} className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700 shadow-sm">{c.text} ({c.score}%)</button>)}
+                                                                    {file.candidates.slice(1).map((c, ci) => <button key={ci} onClick={() => { const n = [...files]; n[idx].detected_title = formatTitle(c.text); setFiles(n); }} className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700 shadow-sm active:scale-90">{c.text} ({c.score}%)</button>)}
                                                                 </div>
                                                             )}
                                                         </div>
                                                     </td>
-                                                    <td className="px-8 py-6 align-top text-center"><button onClick={() => updatePreview(file)} className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl active:scale-90 transition-all"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+                                                    <td className="px-8 py-6 align-top text-center"><button onClick={() => updatePreview(file)} className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-white dark:hover:bg-slate-700 rounded-xl active:scale-90 transition-all shadow-sm border border-transparent hover:border-slate-100"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
                                                 </tr>
                                                 );
                                             })}
@@ -409,7 +451,7 @@
                     </main>
 
                     <SettingsModal isOpen={activeModal === 'settings'} onClose={() => setActiveModal(null)} config={config} setConfig={setConfig} />
-                    <ConfirmModal isOpen={activeModal === 'confirm'} files={selectedFiles} onConfirm={runRename} onCancel={() => setActiveModal(null)} />
+                    <ConfirmModal isOpen={activeModal === 'confirm'} files={selectedFiles} saveLog={saveLog} setSaveLog={setSaveLog} onConfirm={runRename} onCancel={() => setActiveModal(null)} />
                     <FullscreenPreview isOpen={activeModal === 'fullscreen'} path={previewUrl} onClose={() => setActiveModal(null)} />
                 </div>
             );
