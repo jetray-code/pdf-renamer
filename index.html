@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>PDF Smart Renamer</title>
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#4f46e5">
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <script src="https://unpkg.com/tesseract.js@5.0.3/dist/tesseract.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = { darkMode: 'class', theme: { extend: { colors: { indigo: { 600: '#4f46e5', 700: '#4338ca' }, slate: { 950: '#0f172a' } } } } }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; overflow: hidden; }
+        @media (max-width: 768px) { body { overflow: auto; } }
+        .glass { backdrop-filter: blur(12px); }
+        .modal-overlay { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(8px); }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 10px; }
+        .dark ::-webkit-scrollbar-thumb { background: #334155; }
+        .preview-glow { box-shadow: 0 0 40px -10px rgba(99, 102, 241, 0.2); }
+    </style>
+</head>
+<body class="bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 transition-colors duration-300 font-medium">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        const SettingsModal = ({ isOpen, onClose, config, setConfig }) => {
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[100] modal-overlay flex items-center justify-center p-4 animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-md border border-slate-100 dark:border-slate-800 overflow-hidden animate-in zoom-in-95 duration-200">
+                        <div className="p-8 border-b border-slate-50 dark:border-slate-800 flex justify-between items-center">
+                            <h2 className="text-xl font-black">Preferences</h2>
+                            <button onClick={onClose} className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-all"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+                        </div>
+                        <div className="p-8 space-y-8">
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Appearance</label>
+                                <div className="grid grid-cols-3 gap-2 bg-slate-50 dark:bg-slate-800/50 p-1.5 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    {['light', 'dark', 'system'].map(m => (
+                                        <button key={m} onClick={() => setConfig({ ...config, theme: m })} className={`py-2 rounded-xl text-[10px] font-black uppercase transition-all ${config.theme === m ? 'bg-white dark:bg-slate-600 shadow-lg text-indigo-600 dark:text-white' : 'text-slate-400 hover:text-slate-600'}`}>{m}</button>
+                                    ))}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Naming Convention</label>
+                                <div className="space-y-2">
+                                    {[
+                                        { id: 'title', label: 'Title Case', base: 'Aseptic Processing' },
+                                        { id: 'caps', label: 'ALL CAPS', base: 'ASEPTIC PROCESSING' },
+                                        { id: 'small', label: 'all small', base: 'aseptic processing' }
+                                    ].map(opt => {
+                                        const example = opt.base.replace(/\s/g, config.separator) + ".pdf";
+                                        return (
+                                            <button key={opt.id} onClick={() => setConfig({ ...config, naming: opt.id })} className={`w-full flex justify-between items-center p-4 rounded-2xl border transition-all ${config.naming === opt.id ? 'border-indigo-600 bg-indigo-50/50 dark:bg-indigo-900/10 text-indigo-600' : 'border-slate-100 dark:border-slate-800 hover:border-indigo-200'}`}>
+                                                <span className="text-sm font-bold">{opt.label}</span>
+                                                <span className="text-[10px] font-medium opacity-60 italic">{example}</span>
+                                            </button>
+                                        );
+                                    })}
+                                </div>
+                            </div>
+                            <div>
+                                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Word Separator</label>
+                                <div className="flex gap-4">
+                                    {[
+                                        { id: ' ', label: 'Space' },
+                                        { id: '_', label: 'Underscore' },
+                                        { id: '-', label: 'Hyphen' }
+                                    ].map(sep => (
+                                        <button key={sep.id} onClick={() => setConfig({ ...config, separator: sep.id })} className={`flex-1 py-3 rounded-2xl border text-sm font-bold transition-all ${config.separator === sep.id ? 'border-indigo-600 bg-indigo-600 text-white shadow-lg' : 'border-slate-100 dark:border-slate-800 hover:bg-slate-50 dark:hover:bg-slate-800'}`}>
+                                            {sep.label}
+                                        </button>
+                                    ))}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const FullscreenPreview = ({ isOpen, path, onClose }) => {
+            useEffect(() => {
+                const handleEsc = (e) => { if (e.key === 'Escape') onClose(); };
+                if (isOpen) window.addEventListener('keydown', handleEsc);
+                return () => window.removeEventListener('keydown', handleEsc);
+            }, [isOpen]);
+            if (!isOpen || !path) return null;
+            return (
+                <div onClick={onClose} className="fixed inset-0 z-[110] modal-overlay flex items-center justify-center p-4 md:p-8 animate-in fade-in duration-300">
+                    <iframe src={path} className="max-w-full max-h-full w-full h-full rounded-lg shadow-2xl border-2 md:border-4 border-white dark:border-slate-800 animate-in zoom-in-95 duration-300" />
+                </div>
+            );
+        };
+
+        const ConfirmModal = ({ isOpen, files, onConfirm, onCancel }) => {
+            useEffect(() => {
+                const handleEsc = (e) => { if (e.key === 'Escape') onCancel(); };
+                if (isOpen) window.addEventListener('keydown', handleEsc);
+                return () => window.removeEventListener('keydown', handleEsc);
+            }, [isOpen]);
+            if (!isOpen) return null;
+            return (
+                <div className="fixed inset-0 z-[80] flex items-center justify-center p-4 modal-overlay animate-in fade-in duration-200">
+                    <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] shadow-2xl w-full max-w-2xl flex flex-col max-h-[85vh] border border-slate-100 dark:border-slate-800 overflow-hidden">
+                        <div className="p-8 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50">
+                            <h2 className="text-2xl font-black">Confirm Rename</h2>
+                            <p className="text-slate-500 text-sm font-medium mt-1">Ready to process {files.length} files.</p>
+                        </div>
+                        <div className="flex-1 overflow-y-auto p-8 space-y-4">
+                            {files.map((f, i) => (
+                                <div key={i} className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800">
+                                    <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest mb-1">{f.name}</p>
+                                    <p className="text-sm font-extrabold text-indigo-600">{f.detected_title}.pdf</p>
+                                </div>
+                            ))}
+                        </div>
+                        <div className="p-8 border-t border-slate-100 dark:border-slate-800 flex gap-4">
+                            <button onClick={onCancel} className="flex-1 py-4 rounded-2xl text-sm font-bold text-slate-400 hover:bg-slate-100 transition-all">Cancel</button>
+                            <button onClick={onConfirm} className="flex-2 px-12 py-4 rounded-2xl text-sm font-black bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl transition-all">Execute Bulk Rename</button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [dirHandle, setDirHandle] = useState(null);
+            const [files, setFiles] = useState([]);
+            const [selectedPaths, setSelectedPaths] = useState(new Set());
+            const [status, setStatus] = useState('Ready');
+            const [previewUrl, setPreviewPath] = useState(null);
+            const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+            const [activeModal, setActiveModal] = useState(null);
+            const [deferredPrompt, setDeferredPrompt] = useState(null);
+            const [recentPaths, setRecentPaths] = useState([]);
+            
+            const [config, setConfig] = useState(() => {
+                const saved = localStorage.getItem('appConfig');
+                return saved ? JSON.parse(saved) : { theme: 'system', naming: 'title', separator: ' ' };
+            });
+
+            useEffect(() => {
+                if ('serviceWorker' in navigator) {
+                    window.addEventListener('load', () => {
+                        navigator.serviceWorker.register('./sw.js').catch(err => console.log('SW failed', err));
+                    });
+                }
+                window.addEventListener('beforeinstallprompt', (e) => {
+                    e.preventDefault();
+                    setDeferredPrompt(e);
+                });
+
+                const savedPaths = localStorage.getItem('recentPDFPaths');
+                // Note: FileSystemHandle cannot be fully stringified, we store just names for UX
+                if (savedPaths) setRecentPaths(JSON.parse(savedPaths));
+                applyTheme(config.theme);
+                localStorage.setItem('appConfig', JSON.stringify(config));
+                
+                if (files.length > 0) {
+                    setFiles(prev => prev.map(f => ({...f, detected_title: formatTitle(f.detected_title)})));
+                }
+            }, [config]);
+
+            const installApp = async () => {
+                if (!deferredPrompt) return;
+                deferredPrompt.prompt();
+                const { outcome } = await deferredPrompt.userChoice;
+                if (outcome === 'accepted') setDeferredPrompt(null);
+            };
+
+            const applyTheme = (mode) => {
+                const root = window.document.documentElement;
+                if (mode === 'dark') root.classList.add('dark');
+                else if (mode === 'light') root.classList.remove('dark');
+                else root.classList.toggle('dark', window.matchMedia('(prefers-color-scheme: dark)').matches);
+            };
+
+            const formatTitle = (txt) => {
+                if (!txt) return txt;
+                let clean = txt.replace(/[-_]/g, ' ').replace(/\s+/g, ' ').trim();
+                let words = clean.split(' ');
+                if (config.naming === 'caps') clean = clean.toUpperCase();
+                else if (config.naming === 'small') clean = clean.toLowerCase();
+                else clean = words.map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
+                return clean.replace(/\s/g, config.separator);
+            };
+
+            const selectFolder = async () => {
+                try {
+                    const handle = await window.showDirectoryPicker({ mode: 'readwrite' });
+                    setDirHandle(handle);
+                    setFiles([]);
+                    setSelectedPaths(new Set());
+                    setStatus('Scanning PDFs...');
+                    
+                    const list = [];
+                    for await (const entry of handle.values()) {
+                        if (entry.kind === 'file' && entry.name.toLowerCase().endsWith('.pdf')) {
+                            const file = await entry.getFile();
+                            const candidates = await extractTitles(file);
+                            list.push({
+                                handle: entry,
+                                name: entry.name,
+                                candidates: candidates,
+                                detected_title: formatTitle(candidates[0]?.text || entry.name.replace('.pdf', '')),
+                                status: 'Pending'
+                            });
+                        }
+                    }
+                    setFiles(list);
+                    setStatus(`Loaded ${list.length} PDFs`);
+                    setIsSidebarOpen(false);
+                } catch (err) {
+                    console.error(err);
+                    setStatus('Access denied');
+                }
+            };
+
+            const extractTitles = async (file) => {
+                try {
+                    const arrayBuffer = await file.arrayBuffer();
+                    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+                    const page = await pdf.getPage(1);
+                    const textContent = await page.getTextContent();
+                    const viewport = page.getViewport({ scale: 1.0 });
+                    const { height, width } = viewport;
+                    const isLandscape = width > height;
+
+                    const items = textContent.items.map(item => ({
+                        text: item.str.trim(),
+                        size: item.transform[0],
+                        y: item.transform[5],
+                        x: item.transform[4]
+                    })).filter(i => i.text.length > 3);
+
+                    if (items.length === 0) return [{ text: "Scanned Content", score: 10 }];
+
+                    const maxFontSize = Math.max(...items.map(i => i.size));
+                    let grouped = [];
+                    const sortedItems = items.sort((a, b) => b.size - a.size);
+                    const topSizes = [...new Set(sortedItems.map(i => Math.round(i.size)))].slice(0, 3);
+
+                    topSizes.forEach(size => {
+                        const sizeMatches = items.filter(i => Math.round(i.size) === size);
+                        sizeMatches.sort((a, b) => b.y - a.y); 
+
+                        if (sizeMatches.length > 0) {
+                            let currentText = sizeMatches[0].text;
+                            let lastY = sizeMatches[0].y;
+                            for (let i = 1; i < sizeMatches.length; i++) {
+                                if (Math.abs(sizeMatches[i].y - lastY) < size * 2.5) {
+                                    currentText += " " + sizeMatches[i].text;
+                                    lastY = sizeMatches[i].y;
+                                } else {
+                                    grouped.push({ text: currentText, score: calcScore(currentText, size, maxFontSize, isLandscape, lastY, height) });
+                                    currentText = sizeMatches[i].text;
+                                    lastY = sizeMatches[i].y;
+                                }
+                            }
+                            grouped.push({ text: currentText, score: calcScore(currentText, size, maxFontSize, isLandscape, lastY, height) });
+                        }
+                    });
+
+                    return grouped.sort((a, b) => b.score - a.score).slice(0, 3);
+                } catch (e) { return []; }
+            };
+
+            const calcScore = (text, size, max, landscape, y, h) => {
+                let s = (size / max) * 40;
+                if (landscape) s += 20;
+                const posRatio = y / h; 
+                if (posRatio > 0.4 && posRatio < 0.9) s += 20;
+                const words = text.split(' ').length;
+                if (words >= 4 && words <= 15) s += 20;
+                if (text.toLowerCase().includes('pda')) s -= 30;
+                return Math.max(0, Math.min(100, Math.round(s)));
+            };
+
+            const toggleSelection = (name) => {
+                const next = new Set(selectedPaths);
+                if (next.has(name)) next.delete(name); else next.add(name);
+                setSelectedPaths(next);
+            };
+
+            const updatePreview = async (f) => {
+                const file = await f.handle.getFile();
+                const url = URL.createObjectURL(file);
+                setPreviewPath(url);
+            };
+
+            const runRename = async () => {
+                setActiveModal(null);
+                setStatus('Renaming...');
+                const toProcess = files.filter(f => selectedPaths.has(f.name) && f.status !== 'Done');
+                for (let f of toProcess) {
+                    try {
+                        const newName = `${f.detected_title}.pdf`;
+                        if (typeof f.handle.move === 'function') {
+                            await f.handle.move(newName);
+                        } else {
+                            const newFileHandle = await dirHandle.getFileHandle(newName, { create: true });
+                            const writable = await newFileHandle.createWritable();
+                            await writable.write(await f.handle.getFile());
+                            await writable.close();
+                            await dirHandle.removeEntry(f.name);
+                        }
+                        f.status = 'Done'; f.name = newName;
+                    } catch (e) { console.error(e); f.status = 'Error'; }
+                }
+                setFiles([...files]); setSelectedPaths(new Set()); setStatus('Batch complete');
+            };
+
+            return (
+                <div className="h-screen flex flex-col overflow-hidden transition-colors duration-300">
+                    <header className="glass border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-slate-900/80 px-6 md:px-10 py-5 flex justify-between items-center z-30 shadow-sm">
+                        <div className="flex items-center gap-4">
+                            <button onClick={() => setIsSidebarOpen(true)} className="md:hidden p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors">
+                                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                            </button>
+                            <div className="hidden md:block bg-indigo-600 p-2.5 rounded-2xl text-white shadow-xl shadow-indigo-100 dark:shadow-none transition-all active:scale-95">
+                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>
+                            </div>
+                            <div>
+                                <h1 className="text-xl font-black tracking-tighter leading-none">Smart Renamer</h1>
+                                <p className="hidden md:block text-[9px] text-slate-400 font-black uppercase tracking-[0.2em] mt-1.5">Standalone UI</p>
+                            </div>
+                        </div>
+                        <div className="flex gap-4 md:gap-8 items-center">
+                            {deferredPrompt && (
+                                <button onClick={installApp} className="hidden md:flex bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-xl text-xs font-black uppercase tracking-widest shadow-lg items-center gap-2">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                    Install
+                                </button>
+                            )}
+                            <button onClick={() => setActiveModal('settings')} className="p-3 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-2xl transition-all"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg></button>
+                            <button onClick={() => setActiveModal('confirm')} disabled={selectedPaths.size === 0} className="bg-indigo-600 hover:bg-indigo-700 disabled:bg-slate-100 disabled:text-slate-300 text-white px-6 md:px-10 py-3 rounded-2xl text-xs md:text-sm font-black transition-all shadow-xl active:scale-95 uppercase tracking-widest">
+                                Rename ({selectedPaths.size})
+                            </button>
+                        </div>
+                    </header>
+
+                    <main className="flex-1 flex overflow-hidden relative bg-slate-50/50">
+                        {isSidebarOpen && <div onClick={() => setIsSidebarOpen(false)} className="md:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm" />}
+                        <aside className={`fixed md:relative inset-y-0 left-0 w-72 md:w-80 border-r border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-50 transform ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'} transition-transform duration-300 flex flex-col h-full`}>
+                            <div className="p-8 space-y-8 flex-1 overflow-y-auto">
+                                <div>
+                                    <label className="block text-[10px] font-black text-slate-400 mb-4 uppercase tracking-[0.2em]">Source Directory</label>
+                                    <button onClick={selectFolder} className="w-full bg-indigo-600 text-white py-4 rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all active:scale-95 shadow-lg shadow-indigo-100">Open Folder</button>
+                                </div>
+                                {previewUrl && (
+                                    <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                                        <h3 className="text-[10px] font-black text-slate-400 mb-4 uppercase tracking-widest">Live Preview</h3>
+                                        <div onClick={() => setActiveModal('fullscreen')} className="relative border border-slate-100 dark:border-slate-800 rounded-[2.5rem] overflow-hidden shadow-2xl bg-white dark:bg-slate-800 p-1.5 cursor-zoom-in hover:scale-[1.02] transition-transform">
+                                            <iframe src={previewUrl} className="w-full aspect-[3/4] rounded-[2.2rem] border-0 pointer-events-none" />
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </aside>
+
+                        <div className="flex-1 overflow-y-auto p-4 md:p-10 h-full">
+                            <div className="hidden md:block bg-white dark:bg-slate-900 rounded-[2.5rem] border border-slate-200 dark:border-slate-800 overflow-hidden shadow-xl">
+                                <table className="w-full text-left border-collapse">
+                                    <thead className="bg-slate-50/80 dark:bg-slate-800/80 border-b border-slate-100 dark:border-slate-800">
+                                        <tr>
+                                            <th className="px-8 py-6 w-12"><input type="checkbox" className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600" onChange={() => setSelectedPaths(selectedPaths.size === files.length ? new Set() : new Set(files.map(f => f.name)))} checked={files.length > 0 && selectedPaths.size === files.length} /></th>
+                                            <th className="px-4 py-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">Metadata</th>
+                                            <th className="px-8 py-6 text-[10px] font-black text-slate-300 uppercase tracking-widest">Calculated Title</th>
+                                            <th className="px-8 py-6 w-20 text-center">View</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                                        {files.map((file, idx) => (
+                                            <tr key={idx} className={`${selectedPaths.has(file.name) ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : 'hover:bg-slate-50/20 dark:hover:bg-slate-800/20'} transition-all`}>
+                                                <td className="px-8 py-6 align-top"><input type="checkbox" disabled={file.status === 'Done'} checked={selectedPaths.has(file.name)} onChange={() => toggleSelection(file.name)} className="w-5 h-5 rounded-lg border-slate-300 dark:border-slate-700 bg-transparent text-indigo-600" /></td>
+                                                <td className="px-4 py-6 align-top"><p className={`text-[11px] font-bold truncate max-w-[180px] ${file.status === 'Done' ? 'text-slate-300' : 'text-slate-400'}`}>{file.name}</p></td>
+                                                <td className="px-8 py-6">
+                                                    <div className="flex flex-col gap-4">
+                                                        <div className="flex items-center gap-4">
+                                                            <input className={`flex-1 bg-transparent border-b-2 border-transparent focus:border-indigo-400 outline-none font-extrabold text-sm py-1 transition-all ${file.status === 'Done' ? 'text-emerald-500' : 'text-slate-900 dark:text-white'}`} value={file.detected_title} onChange={(e) => { const n = [...files]; n[idx].detected_title = e.target.value; setFiles(n); }} disabled={file.status === 'Done'} />
+                                                            {file.status !== 'Done' && <span className={`px-2.5 py-1 rounded-lg border text-[9px] font-black uppercase ${file.candidates[0]?.score >= 80 ? 'bg-emerald-50 text-emerald-700 border-emerald-100' : 'bg-amber-50 text-amber-600 border-amber-100'}`}>{file.candidates[0]?.score}%</span>}
+                                                        </div>
+                                                        {!isDone && file.candidates.length > 1 && (
+                                                            <div className="flex flex-wrap gap-2">
+                                                                {file.candidates.slice(1).map((c, ci) => <button key={ci} onClick={() => { const n = [...files]; n[idx].detected_title = formatTitle(c.text); setFiles(n); }} className="text-[10px] font-bold text-slate-400 hover:text-indigo-600 transition-colors bg-slate-50 dark:bg-slate-800 px-3 py-1 rounded-full border border-slate-100 dark:border-slate-700">{c.text} ({c.score}%)</button>)}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </td>
+                                                <td className="px-8 py-6 align-top text-center"><button onClick={() => updatePreview(file)} className="p-2.5 text-slate-300 hover:text-indigo-600 hover:bg-white rounded-xl active:scale-90"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button></td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {/* Mobile View */}
+                            <div className="md:hidden space-y-4">
+                                {files.map((file, idx) => (
+                                    <div key={idx} className="bg-white dark:bg-slate-900 p-5 rounded-3xl border border-slate-100 dark:border-slate-800 shadow-sm">
+                                        <div className="flex justify-between items-start mb-4">
+                                            <input type="checkbox" disabled={file.status === 'Done'} checked={selectedPaths.has(file.name)} onChange={() => toggleSelection(file.name)} className="w-5 h-5 rounded-lg border-slate-300 text-indigo-600" />
+                                            <button onClick={() => { updatePreview(file); setActiveModal('fullscreen'); }} className="p-2 text-slate-300 hover:text-indigo-600"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
+                                        </div>
+                                        <p className="text-[10px] font-bold text-slate-400 truncate mb-2">{file.name}</p>
+                                        <input className="w-full bg-transparent border-b-2 border-slate-50 dark:border-slate-800 focus:border-indigo-400 outline-none font-extrabold text-sm py-2 mb-4" value={file.detected_title} onChange={(e) => { const n = [...files]; n[idx].detected_title = e.target.value; setFiles(n); }} disabled={file.status === 'Done'} />
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </main>
+
+                    <SettingsModal isOpen={activeModal === 'settings'} onClose={() => setActiveModal(null)} config={config} setConfig={setConfig} />
+                    <ConfirmModal isOpen={activeModal === 'confirm'} files={files.filter(f => selectedPaths.has(f.name) && f.status !== 'Done')} onConfirm={runRename} onCancel={() => setActiveModal(null)} />
+                    <FullscreenPreview isOpen={activeModal === 'fullscreen'} path={previewUrl} onClose={() => setActiveModal(null)} />
+                </div>
+            );
+        };
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
